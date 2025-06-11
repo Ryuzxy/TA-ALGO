@@ -1,232 +1,338 @@
+import csv
+import datetime
 import os
 import pyfiglet
 import time
-import csv
 from tabulate import tabulate
-from getpass import getpass
 
-menu = "Menu.csv"
-riwayat_file = "riwayat_transaksi.csv"
-users = {
-    "admin": "admin123",
-    "kasir": "kasir123"
-}
+MENU_FILE = "menu.csv"
+USER_FILE = "user.csv"
+ORDER_FILE = "orders.csv"
+RIWAYAT_FILE = "riwayat_transaksi.csv"
 
-def animasi_teks(teks, delay=0.05):
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
+    print(pyfiglet.figlet_format("BRODER COFFEE"))
+
+def read_csv(filename):
+    try:
+        with open(filename, newline='', encoding='utf-8') as file:
+            return list(csv.DictReader(file))
+    except FileNotFoundError:
+        return []
+
+def write_csv(filename, data, fieldnames):
+    with open(filename, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+
+def animasi_teks(teks, delay=0.01):
     for huruf in teks:
         print(huruf, end='', flush=True)
         time.sleep(delay)
     print()
 
 def login():
-    print("\n=== Login ===")
+    os.system("cls" if os.name == "nt" else "clear")
+    animasi_teks(pyfiglet.figlet_format("BRODER COFFEE"))
+    animasi_teks("Selamat datang di Broder Coffee", delay=0.05)
+    animasi_teks("Silakan login untuk melanjutkan...", delay=0.05)
+    time.sleep(1)
+    os.system("cls" if os.name == "nt" else "clear")
+    print(pyfiglet.figlet_format("BRODER COFFEE"))
+    animasi_teks("=== Login ===")
+    users = read_csv(USER_FILE)
     username = input("Username: ")
-    password = getpass("Password: ")
-    if username in users and users[username] == password:
-        print(f"\n✅ Selamat datang, {username}!")
-        Menu()
-    else:
-        print("❌ Login gagal. Username atau password salah.")
-        login()
+    password = input("Password: ")
+    for user in users:
+        if user["username"] == username and user["password"] == password:
+            print(f"\n✅ Login berhasil sebagai {user['role'].capitalize()}.\n")
+            return user["role"]
+    print("\n❌ Username atau password salah.\n")
+    return None
 
-def Menu():
-    os.system('cls' if os.name == 'nt' else 'clear')
-    animasi_teks("\nSilahkan Pilih Menu")
-    animasi_teks("1. Daftar Menu")
-    animasi_teks("2. Pesan")
-    animasi_teks("3. Cari Menu Berdasarkan Harga")
-    animasi_teks("4. Cari Menu Berdasarkan Nama")
-    animasi_teks("5. Urutkan Menu Berdasarkan Harga")
-    animasi_teks("6. Urutkan Menu Berdasarkan Nama")
-    animasi_teks("7. Lihat Riwayat Transaksi")
-    animasi_teks("8. Filter Riwayat Transaksi Berdasarkan Tanggal")
-    animasi_teks("9. Keluar")
-    pilihan = input("Masukkan Pilihan (1-9): ")
-    if pilihan == "1":
-        baca_menu_dari_csv("Menu.csv")
-        # tampilkan_menu()
-    elif pilihan == "2":
-        pesan()
-    elif pilihan == "3":
-        pencarian_menu_berdasarkan_harga()
-    elif pilihan == "4":
-        pencarian_menu_berdasarkan_nama()
-    elif pilihan == "5":
-        pengurutan_menu_berdasarkan_harga()
-    elif pilihan == "6":
-        pengurutan_menu_berdasarkan_nama()
-    elif pilihan == "7":
-        lihat_riwayat_transaksi()
-    elif pilihan == "8":
-        filter_riwayat_berdasarkan_tanggal()
-    elif pilihan == "9":
-        animasi_teks("Terima kasih telah menggunakan Broder Coffee!")
-        exit()
-    else:
-        animasi_teks("Pilihan tidak valid. Silahkan pilih lagi.")
-        Menu()
-
-def baca_menu_dari_csv(nama_file="Menu.csv"):
-    os.system('cls' if os.name == 'nt' else 'clear')
-    global menu
-    try:
-        with open(nama_file, mode="r", encoding="utf-8") as file:
-            reader = csv.DictReader(file)
-            menu = [{"nama": row["nama"], "harga": int(row["harga"])} for row in reader]
-            print("✅ Data menu berhasil dimuat dari file.")
-    except FileNotFoundError:
-        print("❌ File tidak ditemukan.")
-
-def tampilkan_menu():
-    if not menu:
-        print("❌ Tidak ada data menu.")
-        return
-    tabel = [[i+1, item['nama'], f"Rp{item['harga']:,}"] for i, item in enumerate(menu)]
-    print(tabulate(tabel, headers=["No", "Nama Menu", "Harga"], tablefmt="fancy_grid"))
-
-def merge_sort_menu(data, ascending=True, key='harga'):
-    if len(data) <= 1:
-        return data
-    mid = len(data) // 2
-    left = merge_sort_menu(data[:mid], ascending, key)
-    right = merge_sort_menu(data[mid:], ascending, key)
-    return merge(left, right, ascending, key)
-
-def merge(left, right, ascending=True, key='harga'):
-    result = []
-    i = j = 0
-    while i < len(left) and j < len(right):
-        a = left[i][key].lower() if isinstance(left[i][key], str) else left[i][key]
-        b = right[j][key].lower() if isinstance(right[j][key], str) else right[j][key]
-        if (a <= b and ascending) or (a > b and not ascending):
-            result.append(left[i])
-            i += 1
-        else:
-            result.append(right[j])
-            j += 1
-    result.extend(left[i:])
-    result.extend(right[j:])
-    return result
-
-def pencarian_menu_berdasarkan_harga():
-    if not menu:
-        print("❌ Menu kosong.")
-        return
-    try:
-        min_harga = int(input("Masukkan harga minimum: "))
-        max_harga = int(input("Masukkan harga maksimum: "))
-        urutan = input("Urutkan (asc/desc): ").lower()
-        ascending = urutan == "asc"
-        menu_terurut = merge_sort_menu(menu, ascending)
-        hasil = [item for item in menu_terurut if min_harga <= item['harga'] <= max_harga]
-        if not hasil:
-            print("❌ Tidak ada menu dalam range harga tersebut.")
-        else:
-            tabel = [[i+1, item['nama'], f"Rp{item['harga']:,}"] for i, item in enumerate(hasil)]
-            print(tabulate(tabel, headers=["No", "Nama Menu", "Harga"], tablefmt="fancy_grid"))
-    except ValueError:
-        print("❌ Input harus berupa angka.")
-
-def pencarian_menu_berdasarkan_nama():
-    if not menu:
-        print("❌ Menu kosong.")
-        return
-    keyword = input("Masukkan Nama Menu: ").lower()
-    hasil = [item for item in menu if keyword in item['nama'].lower()]
-    if not hasil:
-        print("❌ Menu tidak ditemukan.")
-    else:
-        tabel = [[i+1, item['nama'], f"Rp{item['harga']:,}"] for i, item in enumerate(hasil)]
-        print(tabulate(tabel, headers=["No", "Nama Menu", "Harga"], tablefmt="fancy_grid"))
-
-def pengurutan_menu_berdasarkan_harga():
-    urutan = input("Urutkan berdasarkan harga (asc/desc): ").lower()
-    ascending = urutan == "asc"
-    hasil = merge_sort_menu(menu, ascending, key='harga')
-    tabel = [[i+1, item['nama'], f"Rp{item['harga']:,}"] for i, item in enumerate(hasil)]
-    print(tabulate(tabel, headers=["No", "Nama Menu", "Harga"], tablefmt="fancy_grid"))
-
-def pengurutan_menu_berdasarkan_nama():
-    urutan = input("Urutkan berdasarkan nama (asc/desc): ").lower()
-    ascending = urutan == "asc"
-    hasil = merge_sort_menu(menu, ascending, key='nama')
-    tabel = [[i+1, item['nama'], f"Rp{item['harga']:,}"] for i, item in enumerate(hasil)]
-    print(tabulate(tabel, headers=["No", "Nama Menu", "Harga"], tablefmt="fancy_grid"))
-
-def pesan():
-    if not menu:
-        print("❌ Menu kosong.")
-        return
-    tampilkan_menu()
-    pesanan = []
+# === ADMIN: CRUD MENU ===
+def crud_menu():
+    os.system("cls" if os.name == "nt" else "clear")
+    print(pyfiglet.figlet_format("BRODER COFFEE"))
     while True:
-        try:
-            nomor = int(input("Masukkan nomor menu (0 untuk selesai): "))
-            if nomor == 0:
-                break
-            if 1 <= nomor <= len(menu):
-                jumlah = int(input("Jumlah porsi: "))
-                item = menu[nomor - 1]
-                total = item['harga'] * jumlah
-                pesanan.append({"nama": item['nama'], "jumlah": jumlah, "harga": item['harga'], "total": total})
+        menu = read_csv(MENU_FILE)
+        print("\n=== CRUD MENU ===")
+        print("1. Lihat Menu\n2. Tambah Menu\n3. Edit Menu\n4. Hapus Menu\n5. Kembali")
+        pilihan = input("Pilih: ")
+
+        if pilihan == '1':
+            clear_screen()
+            print("Daftar Menu:")
+            tabel_menu = [[item['id'], item['nama'], f"Rp{item['harga']}"] for item in menu]
+            print(tabulate(tabel_menu, headers=["ID", "Nama", "Harga"], tablefmt="fancy_grid"))
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+        elif pilihan == '2':
+            clear_screen()
+            nama = input("Nama menu: ")
+            harga = input("Harga: ")
+            new_id = str(len(menu) + 1)
+            menu.append({"id": new_id, "nama": nama, "harga": harga})
+            write_csv(MENU_FILE, menu, ["id", "nama", "harga"])
+            print("✅ Menu berhasil ditambahkan.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+        elif pilihan == '3':
+            clear_screen()
+            print("Daftar Menu:")
+            tabel_menu = [[item['id'], item['nama'], f"Rp{item['harga']}"] for item in menu]
+            print(tabulate(tabel_menu, headers=["ID", "Nama", "Harga"], tablefmt="fancy_grid"))
+            id_edit = input("ID menu yang akan diedit: ")
+            for item in menu:
+                if item["id"] == id_edit:
+                    item["nama"] = input("Nama baru: ")
+                    item["harga"] = input("Harga baru: ")
+                    break
+            write_csv(MENU_FILE, menu, ["id", "nama", "harga"])
+            print("✅ Menu berhasil diedit.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+        elif pilihan == '4':
+            clear_screen()
+            print("Daftar Menu:")
+            tabel_menu = [[item['id'], item['nama'], f"Rp{item['harga']}"] for item in menu]
+            print(tabulate(tabel_menu, headers=["ID", "Nama", "Harga"], tablefmt="fancy_grid"))
+            id_hapus = input("ID menu yang akan dihapus: ")
+            menu = [item for item in menu if item["id"] != id_hapus]
+            write_csv(MENU_FILE, menu, ["id", "nama", "harga"])
+            print("✅ Menu berhasil dihapus.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+        elif pilihan == '5':
+            break
+
+# === ADMIN: CRUD PENGGUNA ===
+def crud_pengguna():
+    while True:
+        clear_screen()
+        print("\n=== CRUD Pengguna ===")
+        print("1. Lihat Pengguna\n2. Tambah Pengguna\n3. Edit Pengguna\n4. Hapus Pengguna\n5. Kembali")
+        pilihan = input("Pilih: ")
+        users = read_csv(USER_FILE)
+
+        if pilihan == '1':
+            clear_screen()
+            if users:
+                table = [[u["username"], u["role"]] for u in users]
+                print(tabulate(table, headers=["Username", "Role"], tablefmt="fancy_grid"))
             else:
-                print("❌ Nomor tidak valid.")
-        except ValueError:
-            print("❌ Input harus angka.")
+                print("❌ Tidak ada pengguna.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+
+        elif pilihan == '2':
+            clear_screen()
+            uname = input("Username: ")
+            pwd = input("Password: ")
+            role = input("Role (admin/kasir/user): ")
+            users.append({"username": uname, "password": pwd, "role": role})
+            write_csv(USER_FILE, users, ["username", "password", "role"])
+            print("✅ Pengguna berhasil ditambahkan.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+
+        elif pilihan == '3':
+            clear_screen()
+            table = [[u["username"], u["role"]] for u in users]
+            print(tabulate(table, headers=["Username", "Role"], tablefmt="fancy_grid"))
+            uname = input("Username yang akan diedit: ")
+            for user in users:
+                if user["username"] == uname:
+                    user["password"] = input("Password baru: ")
+                    user["role"] = input("Role baru: ")
+                    break
+            else:
+                print("❌ Username tidak ditemukan.")
+            write_csv(USER_FILE, users, ["username", "password", "role"])
+            print("✅ Pengguna berhasil diedit.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+
+        elif pilihan == '4':
+            clear_screen()
+            table = [[u["username"], u["role"]] for u in users]
+            print(tabulate(table, headers=["Username", "Role"], tablefmt="fancy_grid"))
+            uname = input("Username yang akan dihapus: ")
+            new_users = [u for u in users if u["username"] != uname]
+            if len(new_users) < len(users):
+                write_csv(USER_FILE, new_users, ["username", "password", "role"])
+                print("✅ Pengguna berhasil dihapus.")
+            else:
+                print("❌ Username tidak ditemukan.")
+            input("Tekan Enter untuk kembali...")
+            clear_screen()
+        elif pilihan == '5':
+            break
+
+        else:
+            print("❌ Pilihan tidak valid.")
+
+# === KASIR: TRANSAKSI DAN RIWAYAT ===
+def pesan_menu():
+    clear_screen()
+    menu = read_csv(MENU_FILE)
+    pesanan = []
+    if not menu:
+        print("❌ Menu kosong.")
+        return
+
+    while True:
+        tabel_menu = [[item['id'], item['nama'], f"Rp{item['harga']}"] for item in menu]
+        print(tabulate(tabel_menu, headers=["ID", "Nama", "Harga"], tablefmt="fancy_grid"))
+        pilih = input("Pilih ID menu ('selesai' untuk akhir): ").strip().lower()
+        if pilih == "selesai":
+            break
+        item = next((m for m in menu if m["id"] == pilih), None)
+        if item:
+            jumlah = input("Jumlah: ")
+            if jumlah.isdigit():
+                pesanan.append({
+                    "nama": item["nama"],
+                    "harga": int(item["harga"]),
+                    "jumlah": int(jumlah)
+                })
+                print(f"✅ {item['nama']} x{jumlah} berhasil ditambahkan.")
+                time.sleep(1)
+                clear_screen()
+            else:
+                print("❌ Jumlah harus angka.")
+        else:
+            print("❌ Menu tidak ditemukan.")
+
     if pesanan:
-        total_harga = 0
-        print("\n=== Struk ===")
-        struk = []
-        for i, item in enumerate(pesanan):
-            struk.append([i+1, item['nama'], item['jumlah'], f"Rp{item['harga']:,}", f"Rp{item['total']:,}"])
-            total_harga += item['total']
-        print(tabulate(struk, headers=["No", "Menu", "Qty", "Harga", "Total"], tablefmt="fancy_grid"))
-        print(f"\nTotal Bayar: Rp{total_harga:,}")
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        with open(riwayat_file, mode='a', newline='', encoding='utf-8') as file:
+        waktu = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(RIWAYAT_FILE, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             for item in pesanan:
-                writer.writerow([item['nama'], item['jumlah'], item['harga'], item['total'], timestamp])
-        with open("struk_terakhir.txt", mode='w', encoding='utf-8') as struk_file:
-            struk_file.write("=== STRUK PEMBELIAN ===\n")
-            for item in struk:
-                struk_file.write(f"{item[1]} x{item[2]} = {item[4]}\n")
-            struk_file.write(f"\nTotal Bayar: Rp{total_harga:,}\nWaktu: {timestamp}\n")
-        print("✅ Struk dicetak ke file 'struk_terakhir.txt'")
+                writer.writerow([waktu, item["nama"], item["jumlah"], item["jumlah"] * item["harga"]])
+        print("✅ Pesanan berhasil disimpan.\n")
+        time.sleep(2)
 
-def lihat_riwayat_transaksi():
+def lihat_riwayat():
+    clear_screen()
     try:
-        with open(riwayat_file, mode='r', encoding='utf-8') as file:
+        with open(RIWAYAT_FILE, mode="r", encoding="utf-8") as file:
             reader = csv.reader(file)
-            data = list(reader)
-            if not data:
-                print("📭 Riwayat transaksi kosong.")
-                return
-            tabel = [[i+1] + row for i, row in enumerate(data)]
-            print(tabulate(tabel, headers=["No", "Nama", "Qty", "Harga", "Total", "Waktu"], tablefmt="fancy_grid"))
-    except FileNotFoundError:
-        print("📭 File riwayat belum ada.")
-
-def filter_riwayat_berdasarkan_tanggal():
-    tanggal = input("Masukkan tanggal (YYYY-MM-DD): ")
-    try:
-        with open(riwayat_file, mode='r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            data = [row for row in reader if row and tanggal in row[5]]
-            if not data:
-                print("❌ Tidak ada transaksi pada tanggal tersebut.")
+            data = []
+            for row in reader:
+                data.append([row[0], row[1], row[2], f"Rp{row[3]}"])
+            
+            if data:
+                print("=== Riwayat Transaksi ===")
+                print(tabulate(data, headers=["Nama", "Menu", "Jumlah", "Total"], tablefmt="fancy_grid"))
             else:
-                tabel = [[i+1] + row for i, row in enumerate(data)]
-                print(tabulate(tabel, headers=["No", "Nama", "Qty", "Harga", "Total", "Waktu"], tablefmt="fancy_grid"))
+                print("❌ Belum ada riwayat transaksi.\n")
     except FileNotFoundError:
-        print("📭 File riwayat belum ada.")
+        print("❌ Belum ada riwayat transaksi.\n")
 
-def main():
-    os.system('cls' if os.name == 'nt' else 'clear')
-    judul = pyfiglet.figlet_format("BRODER COFFEE")
-    for baris in judul.splitlines():
-        animasi_teks(baris, delay=0.01)
-    animasi_teks("Selamat Datang di BRODER COFFEE", delay=0.04)
-    login()
+    input("\nTekan Enter untuk kembali...")
 
-main()
+def cari_menu():
+    clear_screen()
+    tabel_menu = [[item['id'], item['nama'], f"Rp{item['harga']}"] for item in menu]
+    print(tabulate(tabel_menu, headers=["ID", "Nama", "Harga"], tablefmt="fancy_grid"))
+    menu = read_csv("menu.csv")
+    if not menu:
+        print("❌ Menu kosong.")
+        return
+    menu.sort(key=lambda x: x["nama"].lower())
+
+    keyword = input("Cari menu: ").lower()
+    low = 0
+    high = len(menu) - 1
+    found = False
+    while low <= high:
+        mid = (low + high) // 2
+        nama_menu = menu[mid]["nama"].lower()
+
+        if keyword == nama_menu:
+            print(f"{menu[mid]['nama']} - Rp{menu[mid]['harga']}")
+            found = True
+            break
+        elif keyword < nama_menu:
+            high = mid - 1
+        else:
+            low = mid + 1
+
+    if not found:
+        print("❌ Tidak ditemukan.")
+        time.sleep(2)
+
+def quick_sort(arr, key, ascending=True):
+    if len(arr) <= 1:
+        return arr
+
+    pivot = arr[0]
+    if ascending:
+        left = [x for x in arr[1:] if int(x[key]) < int(pivot[key])]
+        right = [x for x in arr[1:] if int(x[key]) >= int(pivot[key])]
+    else:
+        left = [x for x in arr[1:] if int(x[key]) > int(pivot[key])]
+        right = [x for x in arr[1:] if int(x[key]) <= int(pivot[key])]
+
+    return quick_sort(left, key, ascending) + [pivot] + quick_sort(right, key, ascending)
+
+def urutkan_menu():
+    clear_screen()
+    menu = read_csv(MENU_FILE)
+    if not menu:
+        print("❌ Menu kosong.")
+        return
+    print("1. Termurah ke Termahal\n2. Termahal ke Termurah")
+    pilihan = input("Pilih: ")
+    ascending = pilihan == "1"
+    sorted_menu = sorted(menu, key=lambda x: int(x["harga"]), reverse=not ascending)
+    for item in sorted_menu:
+        print(f"{item['nama']} - Rp{item['harga']}")
+
+# === MENU UTAMA ===
+def main_menu():
+    role = None
+    while not role:
+        role = login()
+
+    while True:
+        if role == "admin":
+            clear_screen()
+            print("\n=== Menu Admin ===")
+            print("1. CRUD Menu\n2. CRUD Pengguna\n3. Logout")
+            pilihan = input("Pilih: ")
+            if pilihan == "1":
+                crud_menu()
+            elif pilihan == "2":
+                crud_pengguna()
+            elif pilihan == "3":
+                break
+        elif role == "kasir":
+            clear_screen()
+            print("\n=== Menu Kasir ===")
+            print("1. Pesan Menu\n2. Lihat Riwayat\n3. Logout")
+            pilihan = input("Pilih: ")
+            if pilihan == "1":
+                pesan_menu()
+            elif pilihan == "2":
+                lihat_riwayat()
+            elif pilihan == "3":
+                break
+        elif role == "user":
+            clear_screen()
+            print("\n=== Menu User ===")
+            print("1. Cari Menu\n2. Urutkan Menu\n3. Logout")
+            pilihan = input("Pilih: ")
+            if pilihan == "1":
+                cari_menu()
+            elif pilihan == "2":
+                urutkan_menu()
+            elif pilihan == "3":
+                break
+
+# === JALANKAN PROGRAM ===
+if __name__ == "__main__":
+    main_menu()

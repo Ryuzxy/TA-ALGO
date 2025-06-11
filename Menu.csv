@@ -1,6 +1,41 @@
-nama,harga
-Espresso,15000
-Americano,18000
-Latte,22000
-Cappuccino,22000
-Mocha,25000
+id,nama,harga
+1,Kopi Cangkir,6000
+2,Kopi Gelas,7000
+3,Kopi Susu,7000
+4,KSTG,8000
+5,V-Drip,8000
+6,V-Drip Susu,10000
+7,Tubru000,8000
+8,Tubru000 Susu,10000
+9,Taro,12000
+10,Bubblegum,12000
+11,Mango,12000
+12,Blueberry,12000
+13,Strawberry,12000
+14,Red Velvet,12000
+15,Banana,12000
+16,Oreo,12000
+17,Regal,12000
+18,Green Tea,14000
+19,Tea,5000
+20,Milk Tea,8000
+21,Lemon Tea,8000
+22,Green Tea Ori,9000
+23,Nutrisari,5000
+24,Nutrisu,6000
+25,Kubima ,5000  
+26,Joss,5000
+27,Kubisu,6000
+28,Joshua,6000
+29,Susu,8000
+30,Cappuccino,8000
+31,Milo,8000
+32,Chocolate,12000
+33,Happy Cola,12000
+34,Happy Soda,12000
+35,Mie Ori,7000
+36,Mitel (Mie + Telur),10000
+37,Misos (Mie + Sosis),10000
+38,French Fries,10000
+39,Sosis,10000
+40,Nugget,10000
